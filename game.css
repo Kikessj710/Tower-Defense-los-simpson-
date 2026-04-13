@@ -1,0 +1,452 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #1a472a, #0a2a1a);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: auto;
+}
+
+#gameScreen {
+    background: #2d5a2c;
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+h1 {
+    text-align: center;
+    color: #ffcc00;
+    text-shadow: 3px 3px 0 #2d2d2d;
+    margin-bottom: 15px;
+    font-size: 24px;
+}
+
+/* UI Panel */
+#ui {
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(5px);
+    padding: 15px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-around;
+    gap: 30px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+#ui p {
+    color: #ffcc00;
+    font-weight: bold;
+    font-size: 18px;
+    text-shadow: 1px 1px 0 #000;
+}
+
+/* Controles */
+#controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+#controls button {
+    background: #ffcc00;
+    color: #2d2d2d;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+    transition: transform 0.2s, background 0.2s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+#controls button:hover {
+    background: #ffdd44;
+    transform: scale(1.05);
+}
+
+#controls button:active {
+    transform: scale(0.95);
+}
+
+/* Contenedor del mapa */
+#mapContainer {
+    position: relative; /* Esto mantiene a la casa dentro */
+    width: 900px;      /* Usa el ancho exacto de tu mapa */
+    height: 600px;     /* Usa el alto exacto de tu mapa */
+    overflow: hidden;
+}
+
+#map {
+    width: 800px;
+    height: 600px;
+    background: url('imagenes/mapa_springfield.jpg') no-repeat center center/cover;
+    background-color: #3a7a35; /* fallback si no carga la imagen */
+    position: relative;
+    border: 3px solid #ffcc00;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: crosshair;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+/* Cuadrícula visual opcional */
+#map::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        linear-gradient(rgba(255,204,0,0.15) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,204,0,0.15) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+}
+
+/* Capa de enemigos (encima del mapa) */
+#enemies {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 800px;
+    height: 600px;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* Estilos para videos (torres y enemigos) */
+#map video {
+    position: absolute;
+    cursor: pointer;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    transition: transform 0.1s;
+    z-index: 5;
+}
+
+#map video:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+#enemies video {
+   position: absolute;
+    /* Mantenemos el tamaño, pero mejoramos la visibilidad */
+    border-radius: 50%;
+    
+    /* MEJORA 1: Sombra gruesa y oscura para que resalten */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.7);
+    
+    /* MEJORA 2: Borde sutil para separarlos del césped */
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    
+    z-index: 15;
+    background-color: rgba(0,0,0,0.2); /* Fondo sutil si el video es transparente */
+}
+
+/* Animación de torre colocada */
+@keyframes towerPop {
+    0% {
+        transform: scale(0) rotate(-180deg);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+#map video {
+    position: absolute;
+    cursor: pointer;
+    border-radius: 8px;
+    z-index: 5;
+    
+    /* MEJORA 1: Fondo tipo "podio" para que la torre se vea más grande en su celda */
+    background: radial-gradient(circle, rgba(255,204,0,0.3) 0%, rgba(0,0,0,0) 70%);
+    
+    /* MEJORA 2: Sombra de profundidad */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    
+    /* MEJORA 3: Borde de celda sutil */
+    border: 1px solid rgba(255,204,0,0.2);
+
+    transition: transform 0.1s, box-shadow 0.1s;
+    animation: towerPop 0.3s ease-out;
+}
+
+/* Animación de daño */
+@keyframes damageFlash {
+    0% { opacity: 1; filter: brightness(1); }
+    50% { opacity: 0.5; filter: brightness(2); }
+    100% { opacity: 1; filter: brightness(1); }
+}
+
+.enemy-damage {
+    animation: damageFlash 0.2s ease-out;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    #map {
+        width: 600px;
+        height: 450px;
+    }
+    
+    #enemies {
+        width: 600px;
+        height: 450px;
+    }
+    
+    #map video {
+        width: 40px;
+        height: 40px;
+    }
+    
+    #enemies video {
+        width: 30px;
+        height: 30px;
+    }
+    /* ============================================
+   ESTILOS FALTANTES PARA EL JUEGO
+   ============================================ */
+
+/* Barra de experiencia */
+.xp-bar {
+    background: #333;
+    height: 15px;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.xp-fill {
+    background: linear-gradient(90deg, #ffcc00, #ffdd44);
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s;
+}
+
+/* Botones de torres desbloqueables */
+#towerButtons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+#towerButtons button {
+    background: #44aa44;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    transition: transform 0.2s;
+}
+
+#towerButtons button:hover {
+    transform: scale(1.05);
+    background: #55cc55;
+}
+
+/* Botón especial de Bart */
+#specialBtn {
+    background: #ff4444 !important;
+    color: white !important;
+}
+
+#specialBtn:hover {
+    background: #ff6666 !important;
+}
+
+#specialBtn:disabled {
+    background: #666 !important;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Marcadores del camino */
+.path-marker {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: rgba(255, 204, 0, 0.6);
+    border-radius: 50%;
+    pointer-events: none;
+    box-shadow: 0 0 5px gold;
+    z-index: 1;
+}
+
+/* Mensaje de desbloqueo */
+.unlock-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #000, #2d2d2d);
+    color: gold;
+    padding: 30px 50px;
+    border-radius: 20px;
+    text-align: center;
+    z-index: 2000;
+    animation: fadeInOut 3s ease-out;
+    border: 3px solid gold;
+    box-shadow: 0 0 30px rgba(255, 204, 0, 0.5);
+}
+
+.unlock-message h2 {
+    font-size: 32px;
+    margin: 10px 0;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+    15% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    85% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+}
+
+/* Pantalla de Game Over */
+.game-over {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 3000;
+}
+
+.game-over-content {
+    background: #2d2d2d;
+    color: white;
+    padding: 40px;
+    border-radius: 20px;
+    text-align: center;
+    border: 3px solid #ffcc00;
+}
+
+.game-over-content h1 {
+    color: #ff4444;
+    font-size: 48px;
+}
+
+.game-over-content button {
+    margin-top: 20px;
+    padding: 10px 30px;
+    background: #ffcc00;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.game-over-content button:hover {
+    background: #ffdd44;
+    transform: scale(1.05);
+}
+
+/* Soporte para imágenes (si usas PNG en lugar de videos) */
+#map img {
+    position: absolute;
+    cursor: pointer;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    z-index: 5;
+}
+
+#enemies img {
+    position: absolute;
+    border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    z-index: 15;
+}
+
+/* Ajustes responsive */
+@media (max-width: 900px) {
+    #gameScreen {
+        padding: 10px;
+    }
+    
+    #ui p {
+        font-size: 12px;
+    }
+    
+    #controls button {
+        padding: 6px 12px;
+        font-size: 10px;
+    }
+    
+    #towerButtons button {
+        padding: 5px 10px;
+        font-size: 10px;
+    }
+    
+    .unlock-message {
+        padding: 15px 25px;
+    }
+    
+    .unlock-message h2 {
+        font-size: 20px;
+    }
+}
+/* Brillo para los personajes desbloqueados */
+#towerButtons button:not(:disabled) {
+    box-shadow: 0 0 10px rgba(68, 170, 68, 0.4);
+    border-bottom: 4px solid #2d7a2d;
+}
+
+/* Efecto de "Pulsación" para el jefe final (Flanders) */
+.boss-glow {
+    filter: drop-shadow(0 0 15px rgba(255, 0, 0, 0.8));
+    animation: pulse 1.5s infinite alternate;
+}
+
+@keyframes pulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.1); }
+}
+
+/* Estilo para los textos flotantes de daño (-20) */
+.damage-float {
+    position: absolute;
+    color: #ff4444;
+    font-weight: bold;
+    font-size: 20px;
+    text-shadow: 2px 2px 0 #000;
+    pointer-events: none;
+    z-index: 100;
+    animation: floatUp 0.8s ease-out forwards;
+}
+
+@keyframes floatUp {
+    0% { transform: translateY(0); opacity: 1; }
+    100% { transform: translateY(-50px); opacity: 0; }
+}
+#ui {
+    border: 4px solid #ffcc00;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.9), rgba(45,45,45,0.9));
+}
+
+}

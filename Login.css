@@ -1,0 +1,49 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+}
+
+/* 🎮 PANTALLA DE LOGIN */
+#startScreen {
+    width: 100vw;
+    height: 100vh;
+    background: url('imagenes/intro(simpson).jpg') no-repeat center center/cover;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.title {
+    font-size: 60px;
+    color: yellow;
+    text-shadow: 3px 3px black;
+}
+
+.press {
+    font-size: 24px;
+    color: white;
+    margin-top: 20px;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    50% {
+        opacity: 0;
+    }
+}
+
+/* 🎯 PANTALLA DEL JUEGO */
+#gameScreen {
+    width: 100vw;
+    height: 100vh;
+    display: none; /* empieza oculta */
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    background: url('imagenes/mapa_springfield.jpg') no-repeat center center/cover; /* opcional fondo */
+    color: white;
+    font-size: 36px;
+    text-shadow: 2px 2px black;
+}

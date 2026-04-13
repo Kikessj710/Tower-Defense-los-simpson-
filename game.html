@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>The Simpsons Attack - Game</title>
+    <link rel="stylesheet" href="game.css">
+</head>
+<body>
+    <div id="gameScreen">
+        <h1>🍩 The Simpsons Attack - Tower Defense 🍩</h1>
+
+        <!-- Panel de estadísticas -->
+        <div id="ui">
+            <p id="playerHealth">❤️ Salud: 100</p>
+            <p id="currentWave">🌊 Wave: 1</p>
+            <p id="score">⭐ Score: 0</p>
+            <p id="xp">📈 XP: 0</p>
+        </div>
+
+        <!-- Barra de experiencia -->
+        <div class="xp-bar">
+            <div class="xp-fill" id="xpFill"></div>
+        </div>
+
+        <!-- Botones principales -->
+        <div id="controls">
+            <button id="placeTowerBtn">🗼 Colocar Torre</button>
+            <button id="undoBtn">↩️ Deshacer</button>
+            <button id="redoBtn">↪️ Rehacer</button>
+            <!-- El botón de Bart se creará solo cuando se desbloquee, pero puedes ponerlo vacío -->
+        </div>
+
+        <!-- Botones de torres desbloqueables -->
+        <div id="towerButtons"></div>
+
+        <!-- Mapa y enemigos -->
+        <div id="mapContainer">
+            <div id="map"></div>
+            <div id="enemies"></div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+    <script>
+        // El juego arranca automáticamente al cargar la página
+        window.addEventListener('load', () => {
+            if (typeof initGame === 'function') {
+                initGame();
+            } else {
+                console.error("initGame no está definida. Revisa game.js");
+            }
+        });
+    </script>
+</body>
+</html>
