@@ -1,0 +1,16 @@
+{
+  "name": "simpsons-tower-defense-solid",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tower Defense de Los Simpson refactorizado aplicando SOLID (TypeScript)",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit && esbuild src/main.ts --bundle --format=iife --outfile=dist/game.js && esbuild src/login.ts --bundle --format=iife --outfile=dist/login.js",
+    "watch": "esbuild src/main.ts --bundle --format=iife --outfile=dist/game.js --watch",
+    "test": "esbuild tests/model.test.ts --bundle --platform=node --outfile=dist-test/model.test.js --log-level=warning && node dist-test/model.test.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "typescript": "^5.6.0"
+  }
+}

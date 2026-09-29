@@ -450,3 +450,18 @@ h1 {
 }
 
 }
+
+/* Animaciones (antes se inyectaban desde game.js con un <style> creado por JS) */
+@keyframes explodeVFX {
+    0%   { transform:translate(-50%,-50%) scale(0); opacity:1; }
+    70%  { transform:translate(-50%,-50%) scale(1); opacity:.85; }
+    100% { transform:translate(-50%,-50%) scale(1.4); opacity:0; }
+}
+@keyframes dmgFloat {
+    0%   { transform:translateY(0); opacity:1; }
+    100% { transform:translateY(-40px); opacity:0; }
+}
+@keyframes slideInRight {
+    from { transform:translateX(110%); opacity:0; }
+    to   { transform:translateX(0); opacity:1; }
+}
