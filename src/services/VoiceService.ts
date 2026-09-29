@@ -1,13 +1,7 @@
-import { VOICE_FILES } from "../config/voices";
-
-/** Responsabilidad ÚNICA: reproducir la "voz" de un personaje. */
+/** Responsabilidad ÚNICA: reproducir un archivo de voz. (Cada torre/enemigo trae el suyo en su config.) */
 export class VoiceService {
-    play(character: string): void {
-        const file = VOICE_FILES[character];
-        if (!file) {
-            console.warn("No hay sonido asignado para: " + character);
-            return;
-        }
+    play(file: string | undefined): void {
+        if (!file) return;
         const audio = new Audio(file);
         audio.volume = 0.5;
         audio.play().catch(() => {

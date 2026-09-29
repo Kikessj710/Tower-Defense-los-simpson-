@@ -14,7 +14,7 @@ export class MessageBoard {
         setTimeout(() => div.remove(), 1700);
     }
 
-    showWaveBanner(waveNum: number, totalWaves: number, count: number, isFinal: boolean, label: string): void {
+    showWaveBanner(waveNum: number, totalWaves: number, count: number, isFinal: boolean, label: string, bossName = ""): void {
         const div = document.createElement("div");
         div.style.cssText = `position:fixed;top:50%;left:50%;
             transform:translate(-50%,-50%);
@@ -23,7 +23,7 @@ export class MessageBoard {
             z-index:8000;color:#fff;font-size:24px;font-weight:bold;pointer-events:none;`;
         div.innerHTML = isFinal
             ? `😈 <span style="color:gold">OLA FINAL</span><br>
-               <span style="font-size:32px">DIABLO FLANDERS</span><br>
+               <span style="font-size:32px">${bossName}</span><br>
                <small style="font-size:13px;opacity:0.8">¡El jefe final se aproxima! ¡No lo dejes pasar!</small>`
             : `🌊 <span style="color:gold">OLA ${waveNum}</span> de ${totalWaves} — ${label}<br>
                <small style="font-size:13px;opacity:0.8">${count} Cozy en camino</small>`;

@@ -19,7 +19,7 @@ Luego abre `Login.html` en el navegador (o usa Live Server). La carpeta `dist/` 
 |------|-----------|--------|
 | 0 | Punto de partida (JavaScript, `game.js` de 937 líneas) | ✅ en `legacy/` |
 | 1 | **S** — Responsabilidad Única + migración a TypeScript | ✅ ver `docs/PASO-1-SRP.md` |
-| 2 | **O** — Abierto/Cerrado | ⏳ |
+| 2 | **O** — Abierto/Cerrado | ✅ ver `docs/PASO-2-OCP.md` |
 | 3 | **L** — Sustitución de Liskov | ⏳ |
 | 4 | **I** — Segregación de Interfaces | ⏳ |
 | 5 | **D** — Inversión de Dependencias | ⏳ |
@@ -28,7 +28,7 @@ Luego abre `Login.html` en el navegador (o usa Live Server). La carpeta `dist/` 
 
 ```
 src/
-├── config/      datos: torres, enemigos, olas, sonidos, constantes
+├── config/      datos autosuficientes: torres (con voz, apuntado y efectos), enemigos, olas, constantes
 ├── core/        Emitter (eventos tipados), Point
 ├── structures/  CircularQueue<T>, Stack<T>
 ├── map/         PathMap (geometría del camino)
@@ -37,7 +37,8 @@ src/
 ├── services/    VoiceService (audio)
 ├── game/        Game (orquestador), WaveManager, EnemyRoster, TowerRoster, TowerHistory,
 │                PlacementController, PlacementRules, CombatSystem, SpecialAttack,
-│                UnlockManager, PlayerState, GameLoop
+│                UnlockManager, PlayerState, GameLoop,
+│                targeting/ (TargetingStrategy...), effects/ (HitEffect, SlowEffect...)
 ├── ui/          Hud, TowerPalette, ControlPanel, MessageBoard, EndScreen, SpecialAttackView
 └── main.ts      composition root (donde se crean y conectan las piezas)
 legacy/          código original (para comparar antes/después)

@@ -15,7 +15,7 @@ export class TowerPalette {
             btn.disabled = !ok;
             btn.title = cfg.desc;
             btn.textContent = ok
-                ? `${cfg.icon} ${cfg.name} | 💥${cfg.damage} 📡${cfg.range}${cfg.slow ? " ❄️" : ""}`
+                ? `${cfg.icon} ${cfg.name} | 💥${cfg.damage} 📡${cfg.range}${cfg.effects.map(e => e.icon ? " " + e.icon : "").join("")}`
                 : `🔒 ${cfg.name} — ${cfg.unlockXP} XP`;
             if (ok) btn.onclick = () => this.onSelect(key);
             this.container.appendChild(btn);

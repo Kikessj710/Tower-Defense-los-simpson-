@@ -9,7 +9,6 @@
   var WAVE_BREAK_MS = 3e3;
   var DIFFICULTY = { hpPerWave: 8, speedPerWave: 0.05 };
   var SPAWN_INTERVAL = { baseMs: 950, reductionPerWaveMs: 22, minMs: 400 };
-  var LEAK_DAMAGE = { boss: 30, default: 15 };
   var SPECIAL_COOLDOWN_FRAMES = 300;
   var SPECIAL_DAMAGE = 9999;
 
@@ -24,7 +23,7 @@
     { label: "Ataque masivo alien\xEDgena", enemies: [{ key: "kang", count: 3 }, { key: "kodos", count: 3 }, { key: "skinner", count: 3 }] },
     { label: "\xA1Todos juntos!", enemies: [{ key: "nelson", count: 4 }, { key: "kang", count: 3 }, { key: "kodos", count: 3 }, { key: "skinner", count: 2 }] },
     { label: "\u26A0\uFE0F El ej\xE9rcito final...", enemies: [{ key: "kang", count: 4 }, { key: "kodos", count: 4 }, { key: "skinner", count: 3 }] },
-    { label: "\u{1F608} \xA1DIABLO FLANDERS!", enemies: [{ key: "burns", count: 3 }, { key: "skinner", count: 2 }, { key: "flanders", count: 1 }], isFinal: true }
+    { label: "\u{1F608} \xA1DIABLO FLANDERS!", enemies: [{ key: "burns", count: 3 }, { key: "skinner", count: 2 }, { key: "flanders", count: 1 }], isFinal: true, bossName: "DIABLO FLANDERS" }
   ];
 
   // src/game/CombatSystem.ts
@@ -36,9 +35,11 @@
       for (const tower of towers) {
         const target = tower.update(enemies);
         if (!target) continue;
-        const { damage, slow } = tower;
+        const { damage, effects } = tower;
         this.projectiles.launch(tower, target, tower.projSrc, () => {
-          if (!target.isDead) target.takeDamage(damage, slow);
+          if (target.isDead) return;
+          target.takeDamage(damage);
+          for (const effect of effects) effect.apply(target);
         });
       }
     }
@@ -131,8 +132,36 @@
     }
   };
 
+  // src/game/targeting/TargetingStrategy.ts
+  function candidatesInRange(origin, range, enemies) {
+    return enemies.filter((e) => !e.isDead && !e.reachedEnd && Math.hypot(e.x - origin.x, e.y - origin.y) <= range);
+  }
+
+  // src/game/targeting/FurthestAlongPath.ts
+  var FurthestAlongPath = class {
+    pick(origin, range, enemies) {
+      let best = null;
+      for (const e of candidatesInRange(origin, range, enemies)) {
+        if (!best || e.wpIndex > best.wpIndex) best = e;
+      }
+      return best;
+    }
+  };
+
+  // src/game/effects/SlowEffect.ts
+  var SlowEffect = class {
+    constructor(factor, ticks) {
+      this.factor = factor;
+      this.ticks = ticks;
+      this.icon = "\u2744\uFE0F";
+    }
+    apply(target) {
+      target.slowDown(this.factor, this.ticks);
+    }
+  };
+
   // src/config/towers.ts
-  var TOWER_TYPES = ["homero", "lisa", "marge", "bart"];
+  var furthest = new FurthestAlongPath();
   var TOWER_CONFIG = {
     homero: {
       name: "Homero",
@@ -140,10 +169,12 @@
       damage: 20,
       range: 110,
       delay: 45,
-      slow: false,
       unlockXP: 0,
       sprite: "Personajes/Homero/HomerNormal.webm",
       projectile: "Personajes/Homero/DonaAvanzando.webm",
+      voice: "sonidos/presencia.mp3",
+      targeting: furthest,
+      effects: [],
       desc: "Lanza donas. Perfecto para empezar."
     },
     lisa: {
@@ -152,10 +183,12 @@
       damage: 38,
       range: 155,
       delay: 33,
-      slow: false,
       unlockXP: 500,
       sprite: "Personajes/Lisa/Lisa.webm",
       projectile: "Personajes/Lisa/Notas.webm",
+      voice: "sonidos/saxo.mp3",
+      targeting: furthest,
+      effects: [],
       desc: "Saxof\xF3n. M\xE1s da\xF1o y mayor alcance.",
       unlockStory: "Su saxof\xF3n hace m\xE1s da\xF1o y alcanza m\xE1s lejos. \xA1\xDAsala contra alien\xEDgenas!"
     },
@@ -165,10 +198,12 @@
       damage: 18,
       range: 125,
       delay: 38,
-      slow: true,
       unlockXP: 1e3,
       sprite: "Personajes/Marge/Marge.webm",
       projectile: "Personajes/Marge/Maggie.webm",
+      voice: "sonidos/murmullo.mp3",
+      targeting: furthest,
+      effects: [new SlowEffect(0.45, 130)],
       desc: "Lanza a Maggie. Ralentiza a los Cozy.",
       unlockStory: "Lanza a Maggie. Hace menos da\xF1o pero <b>ralentiza</b> a los Cozy un 55%."
     },
@@ -178,14 +213,17 @@
       damage: 55,
       range: 135,
       delay: 44,
-      slow: false,
       unlockXP: 1500,
       sprite: "Personajes/Bart/Bart.webm",
       projectile: "Personajes/Bart/BartExplotando.webm",
+      voice: "sonidos/aycaramba.mp3",
+      targeting: furthest,
+      effects: [],
       desc: "Torre + bomba especial global.",
       unlockStory: "Torre normal <b>y</b> bot\xF3n de bomba global disponible (cooldown 5s)."
     }
   };
+  var TOWER_TYPES = Object.keys(TOWER_CONFIG);
 
   // src/core/Emitter.ts
   var Emitter = class {
@@ -294,7 +332,7 @@
       this.running = true;
       p.waves.events.on("waveStarted", (info) => {
         p.hud.render(p.player, p.waves.currentWave, p.waves.totalWaves);
-        p.messages.showWaveBanner(info.waveNumber, p.waves.totalWaves, info.total, info.isFinal, info.label);
+        p.messages.showWaveBanner(info.waveNumber, p.waves.totalWaves, info.total, info.isFinal, info.label, info.bossName);
       });
       p.waves.events.on("cozySpawned", (cozy) => this.onCozySpawned(cozy));
     }
@@ -333,11 +371,11 @@
       const p = this.p;
       const view = new CozyView(cozy, p.mapView.enemiesEl, p.damageFloats);
       p.enemies.add(cozy);
-      p.voice.play(cozy.cfgKey);
+      p.voice.play(cozy.voice);
       cozy.events.on("died", (c) => this.onCozyDied(c));
       cozy.events.on("reachedEnd", (c) => this.onCozyReachedEnd(c));
       view.events.on("deathAnimationEnded", (c) => {
-        if (c.cfgKey === "flanders") this.win();
+        if (c.winsOnDeath) this.win();
       });
     }
     onCozyDied(cozy) {
@@ -347,13 +385,13 @@
       const newlyUnlocked = p.unlocks.check(p.player.xp);
       for (const key of newlyUnlocked) {
         p.messages.showUnlock(TOWER_CONFIG[key]);
-        if (key === "bart") p.specialView.ensureButton();
+        p.unlockHooks.get(key)?.();
       }
       if (newlyUnlocked.length > 0) p.palette.render(p.unlocks.all);
     }
     onCozyReachedEnd(cozy) {
       const p = this.p;
-      p.player.takeDamage(cozy.type === "boss" ? LEAK_DAMAGE.boss : LEAK_DAMAGE.default);
+      p.player.takeDamage(cozy.leakDamage);
       p.hud.render(p.player, p.waves.currentWave, p.waves.totalWaves);
       if (p.player.isDead) this.gameOver();
     }
@@ -396,7 +434,7 @@
 
   // src/entities/Tower.ts
   var Tower = class {
-    constructor(typeKey, x, y, cellX, cellY) {
+    constructor(typeKey, x, y, cellX, cellY, targeting) {
       this.typeKey = typeKey;
       this.x = x;
       this.y = y;
@@ -409,9 +447,11 @@
       this.damage = c.damage;
       this.range = c.range;
       this.delay = c.delay;
-      this.slow = c.slow;
       this.spriteSrc = c.sprite;
       this.projSrc = c.projectile;
+      this.voice = c.voice;
+      this.effects = c.effects;
+      this.targeting = targeting ?? c.targeting;
     }
     /** Un "tick" de juego. Devuelve el enemigo al que dispara, o null. */
     update(enemies) {
@@ -419,15 +459,7 @@
         this.cooldown--;
         return null;
       }
-      let target = null;
-      let bestWP = -1;
-      for (const e of enemies) {
-        if (e.isDead || e.reachedEnd) continue;
-        if (Math.hypot(e.x - this.x, e.y - this.y) <= this.range && e.wpIndex > bestWP) {
-          target = e;
-          bestWP = e.wpIndex;
-        }
-      }
+      const target = this.targeting.pick(this, this.range, enemies);
       if (!target) return null;
       this.cooldown = this.delay;
       return target;
@@ -497,7 +529,7 @@
       const tower = new Tower(this.selected, tx, ty, cellX, cellY);
       this.roster.add(tower);
       this.history.record(tower);
-      this.voice.play(this.selected);
+      this.voice.play(tower.voice);
       this.exit();
     }
   };
@@ -703,6 +735,8 @@
   };
 
   // src/config/enemies.ts
+  var LEAK_NORMAL = 15;
+  var LEAK_BOSS = 30;
   var COZY_CONFIG = {
     burns: {
       name: "Sr. Burns",
@@ -710,10 +744,11 @@
       hp: 80,
       speed: 1.2,
       reward: 100,
-      type: "normal",
       size: 44,
+      leakDamage: LEAK_NORMAL,
       walk: "Personajes/Burns/BurnsCaminando.webm",
-      die: "Personajes/Burns/BurnsMuriendo.webm"
+      die: "Personajes/Burns/BurnsMuriendo.webm",
+      voice: "sonidos/burns.mp3"
     },
     nelson: {
       name: "Nelson",
@@ -721,10 +756,11 @@
       hp: 110,
       speed: 1.8,
       reward: 150,
-      type: "normal",
       size: 44,
+      leakDamage: LEAK_NORMAL,
       walk: "Personajes/Milhouse-Nelson/NelsonCaminando.webm",
-      die: "Personajes/Milhouse-Nelson/Nelson.webm"
+      die: "Personajes/Milhouse-Nelson/Nelson.webm",
+      voice: "sonidos/nelson.mp3"
     },
     milhouse: {
       name: "Milhouse",
@@ -732,10 +768,11 @@
       hp: 95,
       speed: 1.6,
       reward: 130,
-      type: "normal",
       size: 44,
+      leakDamage: LEAK_NORMAL,
       walk: "Personajes/Milhouse-Nelson/milhouse.webm",
-      die: "Personajes/Milhouse-Nelson/MilhouseParado.webm"
+      die: "Personajes/Milhouse-Nelson/MilhouseParado.webm",
+      voice: "sonidos/milhouse.mp3"
     },
     kang: {
       name: "Kang",
@@ -743,10 +780,11 @@
       hp: 160,
       speed: 2,
       reward: 200,
-      type: "alien",
       size: 50,
+      leakDamage: LEAK_NORMAL,
       walk: "Personajes/Kang y Kodos/KangYKodos.webm",
-      die: "Personajes/Kang y Kodos/KangYKodosMuriendo.webm"
+      die: "Personajes/Kang y Kodos/KangYKodosMuriendo.webm",
+      voice: "sonidos/alien.mp3"
     },
     kodos: {
       name: "Kodos",
@@ -754,10 +792,11 @@
       hp: 200,
       speed: 4,
       reward: 200,
-      type: "alien",
       size: 50,
+      leakDamage: LEAK_NORMAL,
       walk: "Personajes/Kang y Kodos/KangYKodos.webm",
-      die: "Personajes/Kang y Kodos/KangYKodosMuriendo.webm"
+      die: "Personajes/Kang y Kodos/KangYKodosMuriendo.webm",
+      voice: "sonidos/alien.mp3"
     },
     skinner: {
       name: "Dir. Skinner",
@@ -765,8 +804,8 @@
       hp: 220,
       speed: 1,
       reward: 250,
-      type: "strong",
       size: 50,
+      leakDamage: LEAK_NORMAL,
       walk: "Personajes/Skinner/SkinnerCaminando.webm",
       die: "Personajes/Skinner/SkinnerCaida.webm"
     },
@@ -776,12 +815,15 @@
       hp: 2e3,
       speed: 1.1,
       reward: 5e3,
-      type: "boss",
       size: 70,
+      leakDamage: LEAK_BOSS,
+      spawnsLast: true,
+      winsOnDeath: true,
       walk: "Personajes/Flanders/FlandersEntrada.webm",
       die: "Personajes/Flanders/FlandersMuriendo.webm"
     }
   };
+  var ENEMY_TYPES = Object.keys(COZY_CONFIG);
 
   // src/entities/Cozy.ts
   var Cozy = class {
@@ -791,7 +833,7 @@
       this.wpIndex = 1;
       this.isDead = false;
       this.reachedEnd = false;
-      this.slowed = false;
+      this.slowFactor = 1;
       this.slowTick = 0;
       const c = COZY_CONFIG[cfgKey];
       this.name = c.name;
@@ -800,7 +842,10 @@
       this.maxHp = this.hp;
       this.speed = c.speed + speedBonus;
       this.reward = c.reward;
-      this.type = c.type;
+      this.leakDamage = c.leakDamage;
+      this.spawnsLast = c.spawnsLast ?? false;
+      this.winsOnDeath = c.winsOnDeath ?? false;
+      this.voice = c.voice;
       this.size = c.size;
       this.walkSrc = c.walk;
       this.dieSrc = c.die;
@@ -819,7 +864,7 @@
       const t = waypoints[this.wpIndex];
       const dx = t.x - this.x, dy = t.y - this.y;
       const dist = Math.hypot(dx, dy);
-      const spd = this.slowed ? this.speed * 0.45 : this.speed;
+      const spd = this.speed * this.slowFactor;
       if (dist <= spd) {
         this.x = t.x;
         this.y = t.y;
@@ -830,15 +875,17 @@
         this.y += Math.sin(a) * spd;
       }
       this.events.emit("moved", this);
-      if (this.slowTick > 0 && --this.slowTick === 0) this.slowed = false;
+      if (this.slowTick > 0 && --this.slowTick === 0) this.slowFactor = 1;
     }
-    takeDamage(amount, slow = false) {
+    /** Multiplica la velocidad por `factor` durante `ticks` (lo usan los HitEffect de ralentización). */
+    slowDown(factor, ticks) {
+      if (this.isDead) return;
+      this.slowFactor = factor;
+      this.slowTick = ticks;
+    }
+    takeDamage(amount) {
       if (this.isDead) return;
       this.hp -= amount;
-      if (slow) {
-        this.slowed = true;
-        this.slowTick = 130;
-      }
       this.events.emit("damaged", this, amount);
       if (this.hp <= 0) {
         this.isDead = true;
@@ -877,7 +924,7 @@
       for (const entry of design.enemies) {
         for (let i = 0; i < entry.count; i++) {
           const c = new Cozy(entry.key, hpBonus, spdBonus, this.path.start);
-          (c.type === "boss" ? bosses : normal).push(c);
+          (c.spawnsLast ? bosses : normal).push(c);
         }
       }
       this.shuffle(normal);
@@ -890,7 +937,8 @@
         waveNumber: this.currentWave,
         total: this.spawnList.length,
         isFinal: !!design.isFinal,
-        label: design.label
+        label: design.label,
+        bossName: design.bossName
       });
       this.spawnNext();
     }
@@ -962,27 +1010,10 @@
     }
   };
 
-  // src/config/voices.ts
-  var VOICE_FILES = {
-    homero: "sonidos/presencia.mp3",
-    lisa: "sonidos/saxo.mp3",
-    marge: "sonidos/murmullo.mp3",
-    bart: "sonidos/aycaramba.mp3",
-    burns: "sonidos/burns.mp3",
-    nelson: "sonidos/nelson.mp3",
-    milhouse: "sonidos/milhouse.mp3",
-    kang: "sonidos/alien.mp3",
-    kodos: "sonidos/alien.mp3"
-  };
-
   // src/services/VoiceService.ts
   var VoiceService = class {
-    play(character) {
-      const file = VOICE_FILES[character];
-      if (!file) {
-        console.warn("No hay sonido asignado para: " + character);
-        return;
-      }
+    play(file) {
+      if (!file) return;
       const audio = new Audio(file);
       audio.volume = 0.5;
       audio.play().catch(() => {
@@ -1085,7 +1116,7 @@
       document.body.appendChild(div);
       setTimeout(() => div.remove(), 1700);
     }
-    showWaveBanner(waveNum, totalWaves, count, isFinal, label) {
+    showWaveBanner(waveNum, totalWaves, count, isFinal, label, bossName = "") {
       const div = document.createElement("div");
       div.style.cssText = `position:fixed;top:50%;left:50%;
             transform:translate(-50%,-50%);
@@ -1093,7 +1124,7 @@
             padding:22px 44px;border-radius:16px;text-align:center;
             z-index:8000;color:#fff;font-size:24px;font-weight:bold;pointer-events:none;`;
       div.innerHTML = isFinal ? `\u{1F608} <span style="color:gold">OLA FINAL</span><br>
-               <span style="font-size:32px">DIABLO FLANDERS</span><br>
+               <span style="font-size:32px">${bossName}</span><br>
                <small style="font-size:13px;opacity:0.8">\xA1El jefe final se aproxima! \xA1No lo dejes pasar!</small>` : `\u{1F30A} <span style="color:gold">OLA ${waveNum}</span> de ${totalWaves} \u2014 ${label}<br>
                <small style="font-size:13px;opacity:0.8">${count} Cozy en camino</small>`;
       document.body.appendChild(div);
@@ -1181,7 +1212,7 @@
         const btn = document.createElement("button");
         btn.disabled = !ok;
         btn.title = cfg.desc;
-        btn.textContent = ok ? `${cfg.icon} ${cfg.name} | \u{1F4A5}${cfg.damage} \u{1F4E1}${cfg.range}${cfg.slow ? " \u2744\uFE0F" : ""}` : `\u{1F512} ${cfg.name} \u2014 ${cfg.unlockXP} XP`;
+        btn.textContent = ok ? `${cfg.icon} ${cfg.name} | \u{1F4A5}${cfg.damage} \u{1F4E1}${cfg.range}${cfg.effects.map((e) => e.icon ? " " + e.icon : "").join("")}` : `\u{1F512} ${cfg.name} \u2014 ${cfg.unlockXP} XP`;
         if (ok) btn.onclick = () => this.onSelect(key);
         this.container.appendChild(btn);
       }
@@ -1340,7 +1371,10 @@
       hud: new Hud(),
       palette,
       endScreen: new EndScreen(),
-      specialView
+      // Reacciones al desbloquear una torre. Una habilidad nueva = una línea aquí; Game no cambia.
+      unlockHooks: /* @__PURE__ */ new Map([
+        ["bart", () => specialView.ensureButton()]
+      ])
     });
     game.start();
   }

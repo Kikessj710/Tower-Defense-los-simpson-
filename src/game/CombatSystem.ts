@@ -10,9 +10,11 @@ export class CombatSystem {
         for (const tower of towers) {
             const target = tower.update(enemies);
             if (!target) continue;
-            const { damage, slow } = tower;
+            const { damage, effects } = tower;
             this.projectiles.launch(tower, target, tower.projSrc, () => {
-                if (!target.isDead) target.takeDamage(damage, slow);
+                if (target.isDead) return;
+                target.takeDamage(damage);
+                for (const effect of effects) effect.apply(target);
             });
         }
     }

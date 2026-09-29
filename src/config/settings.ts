@@ -11,7 +11,5 @@ export const WAVE_BREAK_MS = 3000;      // pausa entre olas
 export const DIFFICULTY = { hpPerWave: 8, speedPerWave: 0.05 };
 export const SPAWN_INTERVAL = { baseMs: 950, reductionPerWaveMs: 22, minMs: 400 };
 
-export const LEAK_DAMAGE = { boss: 30, default: 15 };
-
 export const SPECIAL_COOLDOWN_FRAMES = 300; // 300 "ticks" de 1/60 s = 5 s
 export const SPECIAL_DAMAGE = 9999;

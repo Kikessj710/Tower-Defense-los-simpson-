@@ -4,7 +4,7 @@ import { PathMap } from "../map/PathMap";
 import { WaveDesign } from "../config/waves";
 import { DIFFICULTY, SPAWN_INTERVAL, WAVE_BREAK_MS } from "../config/settings";
 
-export interface WaveInfo { waveNumber: number; total: number; isFinal: boolean; label: string; }
+export interface WaveInfo { waveNumber: number; total: number; isFinal: boolean; label: string; bossName?: string; }
 export interface WaveRecord { wave: number; total: number; }
 
 /**
@@ -43,7 +43,7 @@ export class WaveManager {
         for (const entry of design.enemies) {
             for (let i = 0; i < entry.count; i++) {
                 const c = new Cozy(entry.key, hpBonus, spdBonus, this.path.start);
-                (c.type === "boss" ? bosses : normal).push(c);
+                (c.spawnsLast ? bosses : normal).push(c);
             }
         }
         this.shuffle(normal);
@@ -59,6 +59,7 @@ export class WaveManager {
             total: this.spawnList.length,
             isFinal: !!design.isFinal,
             label: design.label,
+            bossName: design.bossName,
         });
         this.spawnNext();
     }

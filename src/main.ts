@@ -1,4 +1,5 @@
 import { QUEUE_CAPACITY } from "./config/settings";
+import { TowerKey } from "./config/towers";
 import { WAVE_DESIGNS } from "./config/waves";
 import { CombatSystem } from "./game/CombatSystem";
 import { EnemyRoster } from "./game/EnemyRoster";
@@ -58,7 +59,10 @@ function bootstrap(): void {
         hud: new Hud(),
         palette,
         endScreen: new EndScreen(),
-        specialView,
+        // Reacciones al desbloquear una torre. Una habilidad nueva = una línea aquí; Game no cambia.
+        unlockHooks: new Map<TowerKey, () => void>([
+            ["bart", () => specialView.ensureButton()],
+        ]),
     });
     game.start();
 }

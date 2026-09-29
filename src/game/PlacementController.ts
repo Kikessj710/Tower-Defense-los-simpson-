@@ -77,7 +77,7 @@ export class PlacementController {
         const tower = new Tower(this.selected, tx, ty, cellX, cellY);
         this.roster.add(tower);
         this.history.record(tower);
-        this.voice.play(this.selected);
+        this.voice.play(tower.voice);
         this.exit();
     }
 }

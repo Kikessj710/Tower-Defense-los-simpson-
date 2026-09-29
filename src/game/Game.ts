@@ -1,5 +1,5 @@
-import { INTRO_BANNER_MS, LEAK_DAMAGE } from "../config/settings";
-import { TOWER_CONFIG } from "../config/towers";
+import { INTRO_BANNER_MS } from "../config/settings";
+import { TOWER_CONFIG, TowerKey } from "../config/towers";
 import { Cozy } from "../entities/Cozy";
 import { PathMap } from "../map/PathMap";
 import { VoiceService } from "../services/VoiceService";
@@ -7,7 +7,6 @@ import { ControlPanel } from "../ui/ControlPanel";
 import { EndScreen } from "../ui/EndScreen";
 import { Hud } from "../ui/Hud";
 import { MessageBoard } from "../ui/MessageBoard";
-import { SpecialAttackView } from "../ui/SpecialAttackView";
 import { TowerPalette } from "../ui/TowerPalette";
 import { CozyView } from "../views/CozyView";
 import { DamageFloatView } from "../views/DamageFloatView";
@@ -41,7 +40,8 @@ export interface GameParts {
     panel: ControlPanel;
     messages: MessageBoard;
     endScreen: EndScreen;
-    specialView: SpecialAttackView;
+    /** Qué hacer al desbloquear cada torre (p. ej. Bart habilita su bomba). Se registra en main.ts. */
+    unlockHooks: ReadonlyMap<TowerKey, () => void>;
 }
 
 /**
@@ -55,7 +55,7 @@ export class Game {
     constructor(private readonly p: GameParts) {
         p.waves.events.on("waveStarted", (info) => {
             p.hud.render(p.player, p.waves.currentWave, p.waves.totalWaves);
-            p.messages.showWaveBanner(info.waveNumber, p.waves.totalWaves, info.total, info.isFinal, info.label);
+            p.messages.showWaveBanner(info.waveNumber, p.waves.totalWaves, info.total, info.isFinal, info.label, info.bossName);
         });
         p.waves.events.on("cozySpawned", (cozy) => this.onCozySpawned(cozy));
     }
@@ -99,12 +99,12 @@ export class Game {
         const p = this.p;
         const view = new CozyView(cozy, p.mapView.enemiesEl, p.damageFloats);
         p.enemies.add(cozy);
-        p.voice.play(cozy.cfgKey);
+        p.voice.play(cozy.voice);
 
         cozy.events.on("died", (c) => this.onCozyDied(c));
         cozy.events.on("reachedEnd", (c) => this.onCozyReachedEnd(c));
         view.events.on("deathAnimationEnded", (c) => {
-            if (c.cfgKey === "flanders") this.win();
+            if (c.winsOnDeath) this.win();
         });
     }
 
@@ -116,14 +116,14 @@ export class Game {
         const newlyUnlocked = p.unlocks.check(p.player.xp);
         for (const key of newlyUnlocked) {
             p.messages.showUnlock(TOWER_CONFIG[key]);
-            if (key === "bart") p.specialView.ensureButton();
+            p.unlockHooks.get(key)?.();
         }
         if (newlyUnlocked.length > 0) p.palette.render(p.unlocks.all);
     }
 
     private onCozyReachedEnd(cozy: Cozy): void {
         const p = this.p;
-        p.player.takeDamage(cozy.type === "boss" ? LEAK_DAMAGE.boss : LEAK_DAMAGE.default);
+        p.player.takeDamage(cozy.leakDamage);
         p.hud.render(p.player, p.waves.currentWave, p.waves.totalWaves);
         if (p.player.isDead) this.gameOver();
     }
