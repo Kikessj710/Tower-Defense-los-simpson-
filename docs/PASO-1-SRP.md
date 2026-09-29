@@ -74,7 +74,7 @@ this.events.emit("died", this);
 
 ## 3. Beneficios comprobables
 
-- **`game.js`: 937 líneas → ~30 archivos pequeños**, la mayoría de menos de 80 líneas.
+- **`game.js`: 937 líneas → 38 archivos**, 33 de ellos con menos de 80 líneas.
 - **Sin variables globales**: el estado vive en `PlayerState`, `WaveManager`, `TowerRoster`...
 - **Se puede probar sin navegador**: `npm test` ejecuta 10 pruebas del modelo en Node
   (imposible antes, porque `Cozy` y `Tower` tocaban el DOM en cada método).
