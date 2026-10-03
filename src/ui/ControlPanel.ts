@@ -1,5 +1,7 @@
+import { ControlsPort } from "../game/ports/UIPorts";
+
 /** Responsabilidad ÚNICA: los botones principales (Colocar / Deshacer / Rehacer). */
-export class ControlPanel {
+export class ControlPanel implements ControlsPort {
     private readonly placeBtn = document.getElementById("placeTowerBtn") as HTMLButtonElement;
     private readonly undoBtn = document.getElementById("undoBtn") as HTMLButtonElement;
     private readonly redoBtn = document.getElementById("redoBtn") as HTMLButtonElement;

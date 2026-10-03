@@ -1,5 +1,7 @@
+import { EndScreenPort } from "../game/ports/UIPorts";
+
 /** Responsabilidad ÚNICA: pantallas de Game Over y Victoria. */
-export class EndScreen {
+export class EndScreen implements EndScreenPort {
     showGameOver(score: number, wave: number, totalWaves: number): void {
         this.show(`<div style="background:#1a0000;border:3px solid #dc2626;
                 border-radius:20px;padding:44px 64px;text-align:center;color:#fff;">

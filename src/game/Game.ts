@@ -2,15 +2,9 @@ import { INTRO_BANNER_MS } from "../config/settings";
 import { TOWER_CONFIG, TowerKey } from "../config/towers";
 import { Cozy } from "../entities/Cozy";
 import { PathMap } from "../map/PathMap";
-import { VoiceService } from "../services/VoiceService";
-import { ControlPanel } from "../ui/ControlPanel";
-import { EndScreen } from "../ui/EndScreen";
-import { Hud } from "../ui/Hud";
-import { MessageBoard } from "../ui/MessageBoard";
-import { TowerPalette } from "../ui/TowerPalette";
-import { CozyView } from "../views/CozyView";
-import { DamageFloatView } from "../views/DamageFloatView";
-import { MapView } from "../views/MapView";
+import { VoicePlayer } from "./ports/AudioPorts";
+import { ControlsPort, EndScreenPort, HudPort, PalettePort, StoryBannerPort, UnlockNotifier, WaveBannerPort } from "./ports/UIPorts";
+import { CozyViewFactory, GameMapSurface } from "./ports/ViewPorts";
 import { CombatSystem } from "./CombatSystem";
 import { EnemyRoster } from "./EnemyRoster";
 import { GameLoop } from "./GameLoop";
@@ -32,14 +26,14 @@ export interface GameParts {
     special: SpecialAttack;
     placement: PlacementController;
     loop: GameLoop;
-    voice: VoiceService;
-    mapView: MapView;
-    damageFloats: DamageFloatView;
-    hud: Hud;
-    palette: TowerPalette;
-    panel: ControlPanel;
-    messages: MessageBoard;
-    endScreen: EndScreen;
+    voice: VoicePlayer;
+    mapView: GameMapSurface;
+    hud: HudPort;
+    palette: PalettePort;
+    panel: ControlsPort;
+    messages: WaveBannerPort & StoryBannerPort & UnlockNotifier;
+    endScreen: EndScreenPort;
+    cozyFactory: CozyViewFactory;
     /** Qué hacer al desbloquear cada torre (p. ej. Bart habilita su bomba). Se registra en main.ts. */
     unlockHooks: ReadonlyMap<TowerKey, () => void>;
 }
@@ -97,7 +91,7 @@ export class Game {
 
     private onCozySpawned(cozy: Cozy): void {
         const p = this.p;
-        const view = new CozyView(cozy, p.mapView.enemiesEl, p.damageFloats);
+        const view = p.cozyFactory.create(cozy);
         p.enemies.add(cozy);
         p.voice.play(cozy.voice);
 

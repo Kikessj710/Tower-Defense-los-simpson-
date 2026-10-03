@@ -1,7 +1,8 @@
+import { TowerViewPort } from "../game/ports/ViewPorts";
 import { Tower } from "../entities/Tower";
 
 /** VISTA de la torre: dibuja/quita el sprite de la torre en el mapa. */
-export class TowerView {
+export class TowerView implements TowerViewPort {
     private video: HTMLVideoElement | null = null;
     private fallback: HTMLDivElement | null = null;
 

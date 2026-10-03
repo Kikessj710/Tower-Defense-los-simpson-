@@ -1,7 +1,8 @@
+import { ToastPort, WaveBannerPort, StoryBannerPort, UnlockNotifier } from "../game/ports/UIPorts";
 import { TowerConfig } from "../config/towers";
 
 /** Responsabilidad ÚNICA: mostrar mensajes temporales (toasts y banners). */
-export class MessageBoard {
+export class MessageBoard implements ToastPort, WaveBannerPort, StoryBannerPort, UnlockNotifier {
     showToast(msg: string): void {
         const div = document.createElement("div");
         div.style.cssText = `position:fixed;top:50%;left:50%;

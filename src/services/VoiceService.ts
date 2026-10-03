@@ -1,5 +1,7 @@
+import { VoicePlayer } from "../game/ports/AudioPorts";
+
 /** Responsabilidad ÚNICA: reproducir un archivo de voz. (Cada torre/enemigo trae el suyo en su config.) */
-export class VoiceService {
+export class VoiceService implements VoicePlayer {
     play(file: string | undefined): void {
         if (!file) return;
         const audio = new Audio(file);

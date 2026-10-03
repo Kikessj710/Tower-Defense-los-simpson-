@@ -1,7 +1,8 @@
+import { PalettePort } from "../game/ports/UIPorts";
 import { TOWER_CONFIG, TOWER_TYPES, TowerKey } from "../config/towers";
 
 /** Responsabilidad ÚNICA: dibujar los botones de torres (bloqueadas / desbloqueadas). */
-export class TowerPalette {
+export class TowerPalette implements PalettePort {
     private readonly container = document.getElementById("towerButtons") as HTMLElement;
 
     constructor(private readonly onSelect: (key: TowerKey) => void) {}

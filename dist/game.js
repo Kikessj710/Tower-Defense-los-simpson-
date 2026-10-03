@@ -225,106 +225,6 @@
   };
   var TOWER_TYPES = Object.keys(TOWER_CONFIG);
 
-  // src/core/Emitter.ts
-  var Emitter = class {
-    constructor() {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      this.handlers = /* @__PURE__ */ new Map();
-    }
-    on(event, handler) {
-      const list = this.handlers.get(event) ?? [];
-      list.push(handler);
-      this.handlers.set(event, list);
-    }
-    emit(event, ...args) {
-      this.handlers.get(event)?.forEach((h) => h(...args));
-    }
-  };
-
-  // src/views/CozyView.ts
-  var CozyView = class {
-    constructor(cozy, layer, floats) {
-      this.cozy = cozy;
-      this.floats = floats;
-      this.events = new Emitter();
-      this.fallbackShown = false;
-      const size = cozy.size;
-      this.wrap = document.createElement("div");
-      this.wrap.style.cssText = `
-            position:absolute; pointer-events:none; z-index:8;
-            left:${cozy.x - size / 2}px; top:${cozy.y - size / 2}px;
-            width:${size}px;`;
-      this.video = document.createElement("video");
-      this.video.src = cozy.walkSrc;
-      this.video.autoplay = true;
-      this.video.loop = true;
-      this.video.muted = true;
-      this.video.width = size;
-      this.video.height = size;
-      this.video.style.display = "block";
-      this.video.onerror = () => this.showFallback();
-      const hpWrap = document.createElement("div");
-      hpWrap.style.cssText = `width:${size}px;height:5px;margin-top:2px;
-            background:rgba(0,0,0,0.5);border-radius:3px;overflow:hidden;`;
-      this.hpBar = document.createElement("div");
-      this.hpBar.style.cssText = `height:100%;width:100%;background:#22c55e;
-            border-radius:3px;transition:width .1s;`;
-      hpWrap.appendChild(this.hpBar);
-      this.wrap.appendChild(this.video);
-      this.wrap.appendChild(hpWrap);
-      layer.appendChild(this.wrap);
-      cozy.events.on("moved", () => this.syncPosition());
-      cozy.events.on("damaged", (_c, amount) => this.showDamage(amount));
-      cozy.events.on("died", () => this.playDeathAnimation());
-      cozy.events.on("reachedEnd", () => this.remove());
-    }
-    syncPosition() {
-      this.wrap.style.left = this.cozy.x - this.cozy.size / 2 + "px";
-      this.wrap.style.top = this.cozy.y - this.cozy.size / 2 + "px";
-    }
-    showDamage(amount) {
-      this.video.style.filter = "brightness(4) saturate(0)";
-      setTimeout(() => {
-        this.video.style.filter = "";
-      }, 130);
-      const pct = Math.max(0, this.cozy.hp / this.cozy.maxHp);
-      this.hpBar.style.width = pct * 100 + "%";
-      this.hpBar.style.background = pct > 0.6 ? "#22c55e" : pct > 0.3 ? "#f59e0b" : "#ef4444";
-      this.floats.show(this.cozy.x, this.cozy.y, amount);
-    }
-    playDeathAnimation() {
-      let finished = false;
-      const finish = () => {
-        if (finished) return;
-        finished = true;
-        this.remove();
-        this.events.emit("deathAnimationEnded", this.cozy);
-      };
-      this.video.src = this.cozy.dieSrc;
-      this.video.loop = false;
-      this.video.onended = finish;
-      this.video.onerror = finish;
-    }
-    showFallback() {
-      this.video.style.display = "none";
-      if (this.fallbackShown) return;
-      const size = this.cozy.size;
-      const fb = document.createElement("div");
-      fb.style.cssText = `
-            width:${size}px; height:${size}px;
-            background:rgba(200,60,60,0.85);
-            border-radius:8px; border:2px solid #000;
-            display:flex; align-items:center; justify-content:center;
-            font-size:${Math.floor(size * 0.5)}px;`;
-      fb.textContent = this.cozy.icon;
-      this.wrap.insertBefore(fb, this.wrap.firstChild);
-      this.fallbackShown = true;
-    }
-    remove() {
-      this.wrap.remove();
-    }
-  };
-
   // src/game/Game.ts
   var Game = class {
     constructor(p) {
@@ -369,7 +269,7 @@
     }
     onCozySpawned(cozy) {
       const p = this.p;
-      const view = new CozyView(cozy, p.mapView.enemiesEl, p.damageFloats);
+      const view = p.cozyFactory.create(cozy);
       p.enemies.add(cozy);
       p.voice.play(cozy.voice);
       cozy.events.on("died", (c) => this.onCozyDied(c));
@@ -569,6 +469,22 @@
     }
   };
 
+  // src/core/Emitter.ts
+  var Emitter = class {
+    constructor() {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      this.handlers = /* @__PURE__ */ new Map();
+    }
+    on(event, handler) {
+      const list = this.handlers.get(event) ?? [];
+      list.push(handler);
+      this.handlers.set(event, list);
+    }
+    emit(event, ...args) {
+      this.handlers.get(event)?.forEach((h) => h(...args));
+    }
+  };
+
   // src/game/SpecialAttack.ts
   var SpecialAttack = class {
     constructor() {
@@ -644,50 +560,10 @@
     }
   };
 
-  // src/views/TowerView.ts
-  var TowerView = class {
-    constructor(tower, layer) {
-      this.tower = tower;
-      this.layer = layer;
-      this.video = null;
-      this.fallback = null;
-    }
-    show() {
-      const t = this.tower;
-      const vid = document.createElement("video");
-      vid.src = t.spriteSrc;
-      vid.autoplay = true;
-      vid.loop = true;
-      vid.muted = true;
-      vid.width = 50;
-      vid.height = 50;
-      vid.style.cssText = `position:absolute;left:${t.cellX}px;top:${t.cellY}px;z-index:9;pointer-events:none;`;
-      vid.onerror = () => {
-        vid.style.display = "none";
-        const fb = document.createElement("div");
-        fb.style.cssText = `position:absolute;left:${t.cellX}px;top:${t.cellY}px;
-                width:50px;height:50px;z-index:9;
-                background:#f59e0b;border-radius:10px;border:2px solid #000;
-                display:flex;align-items:center;justify-content:center;font-size:24px;`;
-        fb.textContent = t.icon;
-        this.layer.appendChild(fb);
-        this.fallback = fb;
-      };
-      this.layer.appendChild(vid);
-      this.video = vid;
-    }
-    hide() {
-      this.video?.remove();
-      this.fallback?.remove();
-      this.video = null;
-      this.fallback = null;
-    }
-  };
-
   // src/game/TowerRoster.ts
   var TowerRoster = class {
-    constructor(layer) {
-      this.layer = layer;
+    constructor(factory) {
+      this.factory = factory;
       this.list = [];
       this.views = /* @__PURE__ */ new Map();
     }
@@ -697,7 +573,7 @@
     add(tower) {
       let view = this.views.get(tower);
       if (!view) {
-        view = new TowerView(tower, this.layer);
+        view = this.factory.create(tower);
         this.views.set(tower, view);
       }
       view.show();
@@ -1327,6 +1203,130 @@
     }
   };
 
+  // src/views/TowerView.ts
+  var TowerView = class {
+    constructor(tower, layer) {
+      this.tower = tower;
+      this.layer = layer;
+      this.video = null;
+      this.fallback = null;
+    }
+    show() {
+      const t = this.tower;
+      const vid = document.createElement("video");
+      vid.src = t.spriteSrc;
+      vid.autoplay = true;
+      vid.loop = true;
+      vid.muted = true;
+      vid.width = 50;
+      vid.height = 50;
+      vid.style.cssText = `position:absolute;left:${t.cellX}px;top:${t.cellY}px;z-index:9;pointer-events:none;`;
+      vid.onerror = () => {
+        vid.style.display = "none";
+        const fb = document.createElement("div");
+        fb.style.cssText = `position:absolute;left:${t.cellX}px;top:${t.cellY}px;
+                width:50px;height:50px;z-index:9;
+                background:#f59e0b;border-radius:10px;border:2px solid #000;
+                display:flex;align-items:center;justify-content:center;font-size:24px;`;
+        fb.textContent = t.icon;
+        this.layer.appendChild(fb);
+        this.fallback = fb;
+      };
+      this.layer.appendChild(vid);
+      this.video = vid;
+    }
+    hide() {
+      this.video?.remove();
+      this.fallback?.remove();
+      this.video = null;
+      this.fallback = null;
+    }
+  };
+
+  // src/views/CozyView.ts
+  var CozyView = class {
+    constructor(cozy, layer, floats) {
+      this.cozy = cozy;
+      this.floats = floats;
+      this.events = new Emitter();
+      this.fallbackShown = false;
+      const size = cozy.size;
+      this.wrap = document.createElement("div");
+      this.wrap.style.cssText = `
+            position:absolute; pointer-events:none; z-index:8;
+            left:${cozy.x - size / 2}px; top:${cozy.y - size / 2}px;
+            width:${size}px;`;
+      this.video = document.createElement("video");
+      this.video.src = cozy.walkSrc;
+      this.video.autoplay = true;
+      this.video.loop = true;
+      this.video.muted = true;
+      this.video.width = size;
+      this.video.height = size;
+      this.video.style.display = "block";
+      this.video.onerror = () => this.showFallback();
+      const hpWrap = document.createElement("div");
+      hpWrap.style.cssText = `width:${size}px;height:5px;margin-top:2px;
+            background:rgba(0,0,0,0.5);border-radius:3px;overflow:hidden;`;
+      this.hpBar = document.createElement("div");
+      this.hpBar.style.cssText = `height:100%;width:100%;background:#22c55e;
+            border-radius:3px;transition:width .1s;`;
+      hpWrap.appendChild(this.hpBar);
+      this.wrap.appendChild(this.video);
+      this.wrap.appendChild(hpWrap);
+      layer.appendChild(this.wrap);
+      cozy.events.on("moved", () => this.syncPosition());
+      cozy.events.on("damaged", (_c, amount) => this.showDamage(amount));
+      cozy.events.on("died", () => this.playDeathAnimation());
+      cozy.events.on("reachedEnd", () => this.remove());
+    }
+    syncPosition() {
+      this.wrap.style.left = this.cozy.x - this.cozy.size / 2 + "px";
+      this.wrap.style.top = this.cozy.y - this.cozy.size / 2 + "px";
+    }
+    showDamage(amount) {
+      this.video.style.filter = "brightness(4) saturate(0)";
+      setTimeout(() => {
+        this.video.style.filter = "";
+      }, 130);
+      const pct = Math.max(0, this.cozy.hp / this.cozy.maxHp);
+      this.hpBar.style.width = pct * 100 + "%";
+      this.hpBar.style.background = pct > 0.6 ? "#22c55e" : pct > 0.3 ? "#f59e0b" : "#ef4444";
+      this.floats.show(this.cozy.x, this.cozy.y, amount);
+    }
+    playDeathAnimation() {
+      let finished = false;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        this.remove();
+        this.events.emit("deathAnimationEnded", this.cozy);
+      };
+      this.video.src = this.cozy.dieSrc;
+      this.video.loop = false;
+      this.video.onended = finish;
+      this.video.onerror = finish;
+    }
+    showFallback() {
+      this.video.style.display = "none";
+      if (this.fallbackShown) return;
+      const size = this.cozy.size;
+      const fb = document.createElement("div");
+      fb.style.cssText = `
+            width:${size}px; height:${size}px;
+            background:rgba(200,60,60,0.85);
+            border-radius:8px; border:2px solid #000;
+            display:flex; align-items:center; justify-content:center;
+            font-size:${Math.floor(size * 0.5)}px;`;
+      fb.textContent = this.cozy.icon;
+      this.wrap.insertBefore(fb, this.wrap.firstChild);
+      this.fallbackShown = true;
+    }
+    remove() {
+      this.wrap.remove();
+    }
+  };
+
   // src/main.ts
   function bootstrap() {
     const mapView = new MapView();
@@ -1334,7 +1334,9 @@
     const player = new PlayerState();
     const unlocks = new UnlockManager();
     const enemies = new EnemyRoster(QUEUE_CAPACITY);
-    const towers = new TowerRoster(mapView.mapEl);
+    const towers = new TowerRoster({
+      create: (tower) => new TowerView(tower, mapView.mapEl)
+    });
     const waves = new WaveManager(WAVE_DESIGNS, path);
     const special = new SpecialAttack();
     const voice = new VoiceService();
@@ -1352,6 +1354,7 @@
     const palette = new TowerPalette((key) => placement.enter(key));
     let game;
     const specialView = new SpecialAttackView(special, () => game.useSpecialAttack());
+    const damageFloats = new DamageFloatView(mapView.enemiesEl);
     game = new Game({
       path,
       player,
@@ -1367,10 +1370,12 @@
       messages,
       combat: new CombatSystem(new ProjectileView(mapView.mapEl)),
       loop: new GameLoop(),
-      damageFloats: new DamageFloatView(mapView.enemiesEl),
       hud: new Hud(),
       palette,
       endScreen: new EndScreen(),
+      cozyFactory: {
+        create: (cozy) => new CozyView(cozy, mapView.enemiesEl, damageFloats)
+      },
       // Reacciones al desbloquear una torre. Una habilidad nueva = una línea aquí; Game no cambia.
       unlockHooks: /* @__PURE__ */ new Map([
         ["bart", () => specialView.ensureButton()]

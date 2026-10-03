@@ -1,10 +1,10 @@
 import { Tower } from "../entities/Tower";
 import { Cozy } from "../entities/Cozy";
-import { ProjectileView } from "../views/ProjectileView";
+import { ProjectileLauncher } from "./ports/ViewPorts";
 
 /** Responsabilidad ÚNICA: resolver los disparos (torre -> proyectil -> daño al llegar). */
 export class CombatSystem {
-    constructor(private readonly projectiles: ProjectileView) {}
+    constructor(private readonly projectiles: ProjectileLauncher) {}
 
     update(towers: readonly Tower[], enemies: readonly Cozy[]): void {
         for (const tower of towers) {

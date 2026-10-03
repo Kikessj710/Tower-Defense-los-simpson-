@@ -20,9 +20,9 @@ Luego abre `Login.html` en el navegador (o usa Live Server). La carpeta `dist/` 
 | 0 | Punto de partida (JavaScript, `game.js` de 937 líneas) | ✅ en `legacy/` |
 | 1 | **S** — Responsabilidad Única + migración a TypeScript | ✅ ver `docs/PASO-1-SRP.md` |
 | 2 | **O** — Abierto/Cerrado | ✅ ver `docs/PASO-2-OCP.md` |
-| 3 | **L** — Sustitución de Liskov | ⏳ |
-| 4 | **I** — Segregación de Interfaces | ⏳ |
-| 5 | **D** — Inversión de Dependencias | ⏳ |
+| 3 | **L** — Sustitución de Liskov | No aplica: el proyecto no usa herencia, prefiere composición. |
+| 4 | **I** — Segregación de Interfaces | ✅ ver `docs/PASO-3-ISP-DIP.md` |
+| 5 | **D** — Inversión de Dependencias | ✅ ver `docs/PASO-3-ISP-DIP.md` |
 
 ## Estructura actual
 
@@ -38,7 +38,8 @@ src/
 ├── game/        Game (orquestador), WaveManager, EnemyRoster, TowerRoster, TowerHistory,
 │                PlacementController, PlacementRules, CombatSystem, SpecialAttack,
 │                UnlockManager, PlayerState, GameLoop,
-│                targeting/ (TargetingStrategy...), effects/ (HitEffect, SlowEffect...)
+│                targeting/ (TargetingStrategy...), effects/ (HitEffect, SlowEffect...),
+│                ports/ (UIPorts, ViewPorts, AudioPorts)
 ├── ui/          Hud, TowerPalette, ControlPanel, MessageBoard, EndScreen, SpecialAttackView
 └── main.ts      composition root (donde se crean y conectan las piezas)
 legacy/          código original (para comparar antes/después)

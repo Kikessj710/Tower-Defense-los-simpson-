@@ -1,7 +1,8 @@
+import { PlayerStatus } from "./ports/UIPorts";
 import { STARTING_HEALTH } from "../config/settings";
 
 /** Responsabilidad ÚNICA: estado del jugador (salud, puntaje, XP). Reemplaza las variables globales. */
-export class PlayerState {
+export class PlayerState implements PlayerStatus {
     health = STARTING_HEALTH;
     score = 0;
     xp = 0;

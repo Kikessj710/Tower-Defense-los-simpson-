@@ -7,9 +7,10 @@
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit && esbuild src/main.ts --bundle --format=iife --outfile=dist/game.js && esbuild src/login.ts --bundle --format=iife --outfile=dist/login.js",
     "watch": "esbuild src/main.ts --bundle --format=iife --outfile=dist/game.js --watch",
-    "test": "esbuild tests/model.test.ts --bundle --platform=node --outfile=dist-test/model.test.js --log-level=warning && node dist-test/model.test.js"
+    "test": "esbuild tests/model.test.ts --bundle --platform=node --outfile=dist-test/model.test.js --log-level=warning && esbuild tests/dip.test.ts --bundle --platform=node --outfile=dist-test/dip.test.js --log-level=warning && node dist-test/model.test.js && node dist-test/dip.test.js"
   },
   "devDependencies": {
+    "@types/node": "^26.6.3",
     "esbuild": "^0.25.0",
     "typescript": "^5.6.0"
   }

@@ -1,3 +1,4 @@
+import { CozyViewPort } from "../game/ports/ViewPorts";
 import { Cozy } from "../entities/Cozy";
 import { Emitter } from "../core/Emitter";
 import { DamageFloatView } from "./DamageFloatView";
@@ -6,7 +7,7 @@ import { DamageFloatView } from "./DamageFloatView";
  * VISTA del enemigo. Responsabilidad ÚNICA: dibujar al Cozy (video, barra de vida,
  * parpadeo al recibir daño, animación de muerte) reaccionando a los eventos del modelo.
  */
-export class CozyView {
+export class CozyView implements CozyViewPort {
     readonly events = new Emitter<{ deathAnimationEnded: [Cozy] }>();
 
     private readonly wrap: HTMLDivElement;

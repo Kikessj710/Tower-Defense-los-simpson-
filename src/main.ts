@@ -24,6 +24,8 @@ import { TowerPalette } from "./ui/TowerPalette";
 import { DamageFloatView } from "./views/DamageFloatView";
 import { MapView } from "./views/MapView";
 import { ProjectileView } from "./views/ProjectileView";
+import { TowerView } from "./views/TowerView";
+import { CozyView } from "./views/CozyView";
 
 /**
  * COMPOSITION ROOT: el único lugar donde se crean (new) las piezas y se conectan.
@@ -36,7 +38,9 @@ function bootstrap(): void {
     const player = new PlayerState();
     const unlocks = new UnlockManager();
     const enemies = new EnemyRoster(QUEUE_CAPACITY);
-    const towers = new TowerRoster(mapView.mapEl);
+    const towers = new TowerRoster({
+        create: (tower) => new TowerView(tower, mapView.mapEl)
+    });
     const waves = new WaveManager(WAVE_DESIGNS, path);
     const special = new SpecialAttack();
     const voice = new VoiceService();
@@ -51,14 +55,17 @@ function bootstrap(): void {
     let game: Game;
     const specialView = new SpecialAttackView(special, () => game.useSpecialAttack());
 
+    const damageFloats = new DamageFloatView(mapView.enemiesEl);
     game = new Game({
         path, player, unlocks, enemies, towers, waves, special, placement, voice, mapView, panel, messages,
         combat: new CombatSystem(new ProjectileView(mapView.mapEl)),
         loop: new GameLoop(),
-        damageFloats: new DamageFloatView(mapView.enemiesEl),
         hud: new Hud(),
         palette,
         endScreen: new EndScreen(),
+        cozyFactory: {
+            create: (cozy) => new CozyView(cozy, mapView.enemiesEl, damageFloats)
+        },
         // Reacciones al desbloquear una torre. Una habilidad nueva = una línea aquí; Game no cambia.
         unlockHooks: new Map<TowerKey, () => void>([
             ["bart", () => specialView.ensureButton()],

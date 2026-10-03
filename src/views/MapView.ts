@@ -1,7 +1,8 @@
+import { GameMapSurface, PlacementMapSurface } from "../game/ports/ViewPorts";
 import { PathMap } from "../map/PathMap";
 
 /** VISTA del mapa: dibuja el camino, marcadores de inicio/fin y captura clicks. */
-export class MapView {
+export class MapView implements GameMapSurface, PlacementMapSurface {
     readonly mapEl = document.getElementById("map") as HTMLElement;
     readonly enemiesEl = document.getElementById("enemies") as HTMLElement;
     private readonly container = document.getElementById("mapContainer") as HTMLElement;

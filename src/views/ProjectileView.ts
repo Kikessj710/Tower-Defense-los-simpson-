@@ -1,7 +1,8 @@
+import { ProjectileLauncher } from "../game/ports/ViewPorts";
 import { Point } from "../core/Point";
 
 /** VISTA del proyectil: anima el video desde la torre hasta el enemigo y avisa al llegar. */
-export class ProjectileView {
+export class ProjectileView implements ProjectileLauncher {
     constructor(private readonly layer: HTMLElement) {}
 
     launch(from: Point, target: Point, src: string, onArrive: () => void): void {

@@ -1,10 +1,9 @@
 import { CELL_SIZE } from "../config/settings";
 import { TOWER_CONFIG, TowerKey } from "../config/towers";
 import { Tower } from "../entities/Tower";
-import { VoiceService } from "../services/VoiceService";
-import { ControlPanel } from "../ui/ControlPanel";
-import { MessageBoard } from "../ui/MessageBoard";
-import { MapView } from "../views/MapView";
+import { VoicePlayer } from "./ports/AudioPorts";
+import { ControlsPort, ToastPort } from "./ports/UIPorts";
+import { PlacementMapSurface } from "./ports/ViewPorts";
 import { PlacementRules } from "./PlacementRules";
 import { TowerHistory } from "./TowerHistory";
 import { TowerRoster } from "./TowerRoster";
@@ -20,13 +19,13 @@ export class PlacementController {
     private selected: TowerKey = "homero";
 
     constructor(
-        private readonly map: MapView,
-        private readonly panel: ControlPanel,
+        private readonly map: PlacementMapSurface,
+        private readonly panel: ControlsPort,
         private readonly rules: PlacementRules,
         private readonly roster: TowerRoster,
         private readonly history: TowerHistory,
-        private readonly messages: MessageBoard,
-        private readonly voice: VoiceService,
+        private readonly messages: ToastPort,
+        private readonly voice: VoicePlayer,
     ) {
         map.onClick((mx, my) => this.handleMapClick(mx, my));
     }
